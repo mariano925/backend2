@@ -8,6 +8,7 @@ API REST del proyecto Backend II de Coderhouse, desarrollada con Node.js, Expres
 - Express
 - MongoDB Atlas
 - Mongoose
+- bcrypt
 - JavaScript con módulos ES
 - dotenv
 - Nodemon para desarrollo
@@ -56,7 +57,7 @@ Ejecutar las pruebas automatizadas:
 npm test
 ```
 
-La prueba de salud inicia la aplicación en un puerto local aleatorio y no requiere conectarse a MongoDB Atlas.
+Las pruebas inician la aplicación en puertos locales aleatorios y sustituyen la persistencia del registro; no requieren conectarse a MongoDB Atlas ni modifican datos.
 
 ## Estructura del proyecto
 
@@ -73,22 +74,28 @@ backend2/
 │   │   ├── health.controller.js
 │   │   └── sessions.controller.js
 │   ├── dao/
-│   │   └── event.dao.js
+│   │   ├── event.dao.js
+│   │   └── users.dao.js
 │   ├── middlewares/
 │   │   └── errorHandler.js
 │   ├── models/
 │   │   ├── Event.js
 │   │   └── User.js
 │   ├── repositories/
-│   │   └── event.repository.js
+│   │   ├── event.repository.js
+│   │   └── users.repository.js
 │   ├── routes/
 │   │   ├── events.router.js
 │   │   ├── health.router.js
 │   │   └── sessions.router.js
-│   └── services/
-│       └── event.service.js
+│   ├── services/
+│       ├── event.service.js
+│       └── sessions.service.js
+│   └── utils/
+│       └── hash.js
 ├── test/
-│   └── health.test.js
+│   ├── health.test.js
+│   └── sessions.test.js
 ├── .env.example
 ├── package.json
 └── README.md
@@ -102,6 +109,7 @@ backend2/
 | GET | `/api/events` | Obtiene todos los eventos. |
 | POST | `/api/events` | Crea un evento. Responde `201 Created` si se crea correctamente. |
 | GET | `/api/sessions` | Recurso pendiente; responde `501 Not Implemented`. |
+| POST | `/api/sessions/register` | Registra un usuario con contraseña hasheada. |
 
 ### Crear un evento
 
@@ -121,3 +129,30 @@ Las operaciones de eventos siguen el recorrido:
 ```text
 Router → Controller → Service → Repository → DAO → Modelo Event → MongoDB
 ```
+
+### Registrar un usuario
+
+- **Método:** `POST`
+- **URL:** `/api/sessions/register`
+- **Campos requeridos:** `first_name`, `last_name`, `email` y `password`.
+- El email se normaliza con `trim` y minúsculas; la contraseña requiere al menos 8 caracteres y se almacena hasheada. El rol público no se toma del request y el usuario se crea con rol `user`.
+
+Request:
+
+```json
+{
+  "first_name": "Ana",
+  "last_name": "Pérez",
+  "email": "ana@mail.com",
+  "password": "una-clave-segura"
+}
+```
+
+Respuestas:
+
+- `201 Created`: usuario registrado; `payload` incluye `id`, `first_name`, `last_name`, `email` y `role`, nunca la contraseña.
+- `400 Bad Request`: faltan campos, el email no es válido o la contraseña tiene menos de 8 caracteres.
+- `409 Conflict`: el email ya está registrado.
+- `500 Internal Server Error`: error inesperado.
+
+Ejecutá `npm run dev` para iniciar la aplicación y `npm test` para las pruebas automatizadas.
