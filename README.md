@@ -1,44 +1,29 @@
 # Plataforma de Eventos e Inscripciones
 
-API REST desarrollada con Node.js y Express para una plataforma de gestión de eventos e inscripciones.
-
-Este proyecto forma parte del curso Backend II de Coderhouse. Su desarrollo será progresivo, incorporando funcionalidades y mejoras arquitectónicas a lo largo de las distintas entregas.
+API REST del proyecto Backend II de Coderhouse, desarrollada con Node.js, Express y MongoDB/Mongoose. La consulta y creación de eventos usan las capas Controller, Service, Repository y DAO.
 
 ## Tecnologías
 
-- Node.js
+- Node.js (18 o posterior)
 - Express
-- MongoDB (preparado para próximas etapas)
+- MongoDB Atlas
 - Mongoose
-- JavaScript (ES Modules)
+- JavaScript con módulos ES
 - dotenv
-- Nodemon (desarrollo)
+- Nodemon para desarrollo
+- `node:test` para pruebas automatizadas (módulo nativo de Node.js)
 
 ## Instalación
 
-Clonar el repositorio:
-
 ```bash
 git clone https://github.com/mariano925/backend2.git
-```
-
-Ingresar al directorio:
-
-```bash
 cd backend2
-```
-
-Instalar las dependencias:
-
-```bash
 npm install
 ```
 
-## Configuración de variables de entorno
+## Variables de entorno y MongoDB Atlas
 
-Crear un archivo `.env` en la raíz del proyecto tomando como referencia `.env.example`.
-
-Variables necesarias:
+Creá un archivo `.env` en la raíz del proyecto usando `.env.example` como referencia:
 
 ```env
 PORT=8080
@@ -47,25 +32,31 @@ MONGO_URL=
 JWT_SECRET=
 ```
 
-Completar las variables según la configuración del entorno local.
+Configurá `MONGO_URL` con la URI de conexión proporcionada por MongoDB Atlas y la base de datos que corresponda. Si la contraseña contiene caracteres reservados para URI, deben estar codificados. No publiques ni incluyas el archivo `.env` en Git. `JWT_SECRET` está reservado para etapas posteriores y no se utiliza en las funcionalidades actuales.
 
-Las variables `MONGO_URL` y `JWT_SECRET` quedan preparadas para las próximas etapas del proyecto. En esta primera entrega no se requiere una conexión activa con MongoDB.
+La aplicación establece la conexión a MongoDB antes de empezar a escuchar solicitudes. Si la conexión falla, el servidor no inicia.
 
-## Ejecución
+## Ejecución y pruebas
 
-Iniciar el servidor en modo desarrollo:
+Iniciar en modo desarrollo:
 
 ```bash
 npm run dev
 ```
 
-Iniciar el servidor en modo producción:
+Iniciar con Node.js:
 
 ```bash
 npm start
 ```
 
-Por defecto, el servidor utiliza el puerto `8080`, que puede modificarse mediante la variable de entorno `PORT`.
+Ejecutar las pruebas automatizadas:
+
+```bash
+npm test
+```
+
+La prueba de salud inicia la aplicación en un puerto local aleatorio y no requiere conectarse a MongoDB Atlas.
 
 ## Estructura del proyecto
 
@@ -77,85 +68,56 @@ backend2/
 │   ├── config/
 │   │   ├── config.js
 │   │   └── database.js
-│   ├── routes/
-│   │   ├── health.router.js
-│   │   ├── events.router.js
-│   │   └── sessions.router.js
 │   ├── controllers/
-│   │   ├── health.controller.js
 │   │   ├── events.controller.js
+│   │   ├── health.controller.js
 │   │   └── sessions.controller.js
-│   ├── services/
-│   │   └── .gitkeep
-│   ├── repositories/
-│   │   └── .gitkeep
 │   ├── dao/
-│   │   └── .gitkeep
-│   ├── models/
-│   │   ├── User.js
-│   │   └── Event.js
+│   │   └── event.dao.js
 │   ├── middlewares/
-│   │   └── .gitkeep
-│   └── utils/
-│       └── .gitkeep
+│   │   └── errorHandler.js
+│   ├── models/
+│   │   ├── Event.js
+│   │   └── User.js
+│   ├── repositories/
+│   │   └── event.repository.js
+│   ├── routes/
+│   │   ├── events.router.js
+│   │   ├── health.router.js
+│   │   └── sessions.router.js
+│   └── services/
+│       └── event.service.js
+├── test/
+│   └── health.test.js
 ├── .env.example
-├── .gitignore
 ├── package.json
-├── package-lock.json
 └── README.md
 ```
 
-La aplicación utiliza una arquitectura por capas para separar responsabilidades y facilitar el mantenimiento y la evolución del proyecto.
-
-Las carpetas que todavía no contienen implementaciones incluyen un archivo `.gitkeep` para conservar su estructura en el repositorio. Estos archivos son auxiliares y no contienen lógica de aplicación.
-
-## Rutas disponibles
+## Endpoints
 
 | Método | Endpoint | Descripción |
 |---|---|---|
-| GET | `/api/health` | Verifica que el servidor esté activo. |
-| GET | `/api/events` | Devuelve la lista inicial de eventos. |
-| GET | `/api/sessions` | Estructura inicial del recurso de sesiones. Todavía no implementa funcionalidades de autenticación y responde con HTTP 501. |
+| GET | `/api/health` | Comprueba que el servidor esté activo. |
+| GET | `/api/events` | Obtiene todos los eventos. |
+| POST | `/api/events` | Crea un evento. Responde `201 Created` si se crea correctamente. |
+| GET | `/api/sessions` | Recurso pendiente; responde `501 Not Implemented`. |
 
-### Respuestas iniciales
+### Crear un evento
 
-**GET /api/health**
-
-Código HTTP: `200 OK`
-
-```json
-{
-  "status": "ok",
-  "message": "Servidor activo"
-}
-```
-
-**GET /api/events**
-
-Código HTTP: `200 OK`
+`POST /api/events` recibe JSON. `title`, `date` y `location` son obligatorios; `description` es opcional. Se aplican las validaciones definidas en el modelo `Event`. Los errores de validación responden con HTTP `400`.
 
 ```json
 {
-  "status": "success",
-  "payload": []
+  "title": "Conferencia de tecnología",
+  "description": "Encuentro sobre desarrollo de software",
+  "date": "2027-05-20T18:00:00.000Z",
+  "location": "Auditorio central"
 }
 ```
 
-**GET /api/sessions**
+Las operaciones de eventos siguen el recorrido:
 
-Código HTTP: `501 Not Implemented`
-
-```json
-{
-  "status": "error",
-  "message": "Recurso de sesiones pendiente de implementación"
-}
+```text
+Router → Controller → Service → Repository → DAO → Modelo Event → MongoDB
 ```
-
-## Estado del proyecto
-
-Primera entrega: refactor arquitectónico inicial.
-
-La API cuenta con un servidor Express funcional, configuración mediante variables de entorno, separación inicial por capas y estructuras base para los recursos de usuarios, eventos y sesiones.
-
-Las funcionalidades de autenticación, autorización, gestión completa de eventos e inscripciones se incorporarán progresivamente en las próximas entregas de Backend II.
