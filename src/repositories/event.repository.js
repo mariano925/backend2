@@ -5,6 +5,10 @@ class EventRepository {
   async getAll() {
     return EventDAO.getAll();
   }
+
+  async create(eventData) {
+    return EventDAO.create(eventData);
+  }
 }
 
 export default new EventRepository();

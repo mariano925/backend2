@@ -13,3 +13,16 @@ export async function getEvents(req, res, next) {
     next(error);
   }
 }
+
+export async function createEvent(req, res, next) {
+  try {
+    const event = await EventService.create(req.body);
+
+    return res.status(201).json({
+      status: 'success',
+      payload: event,
+    });
+  } catch (error) {
+    next(error);
+  }
+}

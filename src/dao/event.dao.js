@@ -5,6 +5,10 @@ class EventDAO {
   async getAll() {
     return Event.find();
   }
+
+  async create(eventData) {
+    return Event.create(eventData);
+  }
 }
 
 export default new EventDAO();

@@ -5,6 +5,10 @@ class EventService {
   async getAll() {
     return EventRepository.getAll();
   }
+
+  async create(eventData) {
+    return EventRepository.create(eventData);
+  }
 }
 
 export default new EventService();
