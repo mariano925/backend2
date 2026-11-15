@@ -1,6 +1,7 @@
 
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import healthRouter from './routes/health.router.js';
 import eventsRouter from './routes/events.router.js';
 import sessionsRouter from './routes/sessions.router.js';
@@ -11,6 +12,7 @@ const app = express();
 // Configura los middlewares generales.
 app.use(cors());
 app.use(express.json());
+app.use(cookieParser());
 
 // Registra las rutas de la API.
 app.use('/api/health', healthRouter);
