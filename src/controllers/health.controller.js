@@ -1,7 +1,6 @@
 
- // Controla la respuesta del estado del servidor.
+// Atiende la solicitud de salud y devuelve el estado del servidor al router.
 export function getHealth(req, res) {
-  // Devuelve una respuesta exitosa.
   res.status(200).json({
     status: 'ok',
     message: 'Servidor activo',

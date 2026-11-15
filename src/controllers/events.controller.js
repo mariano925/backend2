@@ -1,7 +1,7 @@
 
 import EventService from '../services/event.service.js';
 
-// El Controller recibe la solicitud y delega la consulta al Service.
+// Recibe solicitudes de eventos, delega al service, forma las respuestas y deriva errores.
 export async function getEvents(req, res, next) {
   try {
     const events = await EventService.getAll();

@@ -7,7 +7,7 @@ import {
 
 const router = Router();
 
-// Prepara la ruta inicial de sesiones.
+// Conecta los endpoints de sesiones con sus controladores; app.js monta este router en /api/sessions.
 router.get('/', getSessions);
 router.post('/register', registerUser);
 

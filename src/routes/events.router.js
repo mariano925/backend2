@@ -4,7 +4,7 @@ import { createEvent, getEvents } from '../controllers/events.controller.js';
 
 const router = Router();
 
-// Deriva GET / al controlador de eventos.
+// Conecta los endpoints de eventos con sus controladores; app.js monta este router en /api/events.
 router.get('/', getEvents);
 router.post('/', createEvent);
 

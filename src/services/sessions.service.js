@@ -9,6 +9,7 @@ function createRequestError(message, status) {
   return error;
 }
 
+// Valida y prepara el registro, usando el helper de hash y el repository para persistir al usuario.
 class SessionsService {
   async register(userData = {}) {
     const { first_name, last_name, email, password } = userData;

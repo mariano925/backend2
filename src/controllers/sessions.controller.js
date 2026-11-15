@@ -1,7 +1,7 @@
 
 import SessionsService from '../services/sessions.service.js';
 
- // Controla las operaciones de sesiones.
+// Atiende las solicitudes de sesiones y delega el registro al service.
 export function getSessions(req, res) {
   // Indica que el recurso todavía no está implementado.
   res.status(501).json({

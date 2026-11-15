@@ -1,6 +1,6 @@
 import EventRepository from '../repositories/event.repository.js';
 
-// El service coordina la consulta delegándola al repository.
+// Coordina las operaciones de eventos y delega las consultas y escrituras al repository.
 class EventService {
   async getAll() {
     return EventRepository.getAll();

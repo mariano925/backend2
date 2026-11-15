@@ -1,3 +1,4 @@
+// Centraliza los errores propagados por las rutas y controllers en respuestas HTTP.
 function errorHandler(err, req, res, next) {
   console.error('Error en la solicitud:', err.message);
 
