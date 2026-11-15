@@ -28,7 +28,7 @@ class SessionsService {
 
     const normalizedEmail = email.trim().toLowerCase();
     if (!EMAIL_PATTERN.test(normalizedEmail)) {
-      throw createRequestError('Faltan campos obligatorios', 400);
+      throw createRequestError('El email no es válido', 400);
     }
 
     if (password.length < 8) {

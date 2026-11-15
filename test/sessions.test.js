@@ -89,7 +89,19 @@ test('rejects an invalid email', async (t) => {
   assert.equal(response.status, 400);
   assert.deepEqual(await response.json(), {
     status: 'error',
-    message: 'Faltan campos obligatorios',
+    message: 'El email no es válido',
+  });
+});
+
+test('rejects a password shorter than 8 characters', async (t) => {
+  const { response } = await withRegistrationRequest(t, {
+    body: { ...validUser, password: 'short' },
+  });
+
+  assert.equal(response.status, 400);
+  assert.deepEqual(await response.json(), {
+    status: 'error',
+    message: 'La contraseña debe tener al menos 8 caracteres',
   });
 });
 
