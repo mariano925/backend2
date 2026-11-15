@@ -1,5 +1,6 @@
 import UsersRepository from '../repositories/users.repository.js';
-import { hashPassword } from '../utils/hash.js';
+import { comparePassword, hashPassword } from '../utils/hash.js';
+import { generateToken } from '../utils/jwt.js';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -51,6 +52,43 @@ class SessionsService {
       email: normalizedEmail,
       password: hashedPassword,
     });
+  }
+
+  async login(credentials = {}) {
+    const { email, password } = credentials;
+
+    if (
+      typeof email !== 'string' ||
+      !email.trim() ||
+      typeof password !== 'string' ||
+      !password
+    ) {
+      throw createRequestError('Email y contraseña son obligatorios', 400);
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = await UsersRepository.findByEmail(normalizedEmail);
+
+    if (!user || !(await comparePassword(password, user.password))) {
+      throw createRequestError('Credenciales inválidas', 401);
+    }
+
+    const token = generateToken({
+      id: String(user._id),
+      email: user.email,
+      role: user.role,
+    });
+
+    return {
+      token,
+      user: {
+        id: String(user._id),
+        first_name: user.first_name,
+        last_name: user.last_name,
+        email: user.email,
+        role: user.role,
+      },
+    };
   }
 }
 
