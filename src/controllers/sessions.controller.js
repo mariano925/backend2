@@ -1,5 +1,6 @@
 
 import SessionsService from '../services/sessions.service.js';
+import { config } from '../config/config.js';
 
 // Atiende las solicitudes de sesiones y delega el registro al service.
 export function getSessions(req, res) {
@@ -23,6 +24,26 @@ export async function registerUser(req, res, next) {
         email: user.email,
         role: user.role,
       },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function loginUser(req, res, next) {
+  try {
+    const { token } = await SessionsService.login(req.body);
+
+    res.cookie('currentUser', token, {
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: 3600000,
+      secure: config.nodeEnv === 'production',
+    });
+
+    return res.status(200).json({
+      status: 'success',
+      message: 'Login correcto',
     });
   } catch (error) {
     next(error);

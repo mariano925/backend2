@@ -2,6 +2,7 @@
 import { Router } from 'express';
 import {
   getSessions,
+  loginUser,
   registerUser,
 } from '../controllers/sessions.controller.js';
 
@@ -10,5 +11,6 @@ const router = Router();
 // Conecta los endpoints de sesiones con sus controladores; app.js monta este router en /api/sessions.
 router.get('/', getSessions);
 router.post('/register', registerUser);
+router.post('/login', loginUser);
 
 export default router;
