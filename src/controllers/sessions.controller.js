@@ -11,6 +11,17 @@ export function getSessions(req, res) {
   });
 }
 
+export function getCurrentUser(req, res) {
+  return res.status(200).json({
+    status: 'success',
+    payload: {
+      id: req.user.id,
+      email: req.user.email,
+      role: req.user.role,
+    },
+  });
+}
+
 export async function registerUser(req, res, next) {
   try {
     const user = await SessionsService.register(req.body);
@@ -48,4 +59,17 @@ export async function loginUser(req, res, next) {
   } catch (error) {
     next(error);
   }
+}
+
+export function logoutUser(req, res) {
+  res.clearCookie('currentUser', {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: config.nodeEnv === 'production',
+  });
+
+  return res.status(200).json({
+    status: 'success',
+    message: 'Sesión cerrada',
+  });
 }
