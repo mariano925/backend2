@@ -12,7 +12,7 @@ API REST del proyecto Backend II de Coderhouse, desarrollada con Node.js, Expres
 - JSON Web Token (`jsonwebtoken`)
 - JavaScript con módulos ES
 - dotenv
-- Nodemon para desarrollo
+- `node --watch` para reinicio automático durante el desarrollo (funcionalidad incorporada en Node.js).
 - `node:test` para pruebas automatizadas (módulo nativo de Node.js)
 
 ## Instalación
