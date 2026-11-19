@@ -1,6 +1,5 @@
 import UsersRepository from '../repositories/users.repository.js';
 import { comparePassword, hashPassword } from '../utils/hash.js';
-import { generateToken } from '../utils/jwt.js';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -73,22 +72,7 @@ class SessionsService {
       throw createRequestError('Credenciales inválidas', 401);
     }
 
-    const token = generateToken({
-      id: String(user._id),
-      email: user.email,
-      role: user.role,
-    });
-
-    return {
-      token,
-      user: {
-        id: String(user._id),
-        first_name: user.first_name,
-        last_name: user.last_name,
-        email: user.email,
-        role: user.role,
-      },
-    };
+    return user;
   }
 }
 
