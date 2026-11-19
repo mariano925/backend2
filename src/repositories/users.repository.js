@@ -2,6 +2,10 @@ import UsersDAO from '../dao/users.dao.js';
 
 // Abstrae el acceso a usuarios y delega la persistencia al DAO para el service.
 class UsersRepository {
+  async findById(id) {
+    return UsersDAO.findById(id);
+  }
+
   async findByEmail(email) {
     return UsersDAO.findByEmail(email);
   }
