@@ -1,21 +1,32 @@
 # Plataforma de Eventos e Inscripciones
 
-API REST del proyecto Backend II de Coderhouse, desarrollada con Node.js, Express y MongoDB/Mongoose. La consulta y creación de eventos usan las capas Controller, Service, Repository y DAO. El registro y la autenticación de usuarios utilizan bcrypt, JWT y cookies.
+API REST del proyecto Backend II de Coderhouse, desarrollada con Node.js, Express y MongoDB/Mongoose.
+
+La aplicación permite consultar y crear eventos, registrar usuarios y gestionar sesiones de autenticación. La arquitectura utiliza las capas Controller, Service, Repository y DAO para separar las responsabilidades.
+
+La autenticación está centralizada mediante **Passport.js**, con estrategias Local para registro y login, y JWT para consultar al usuario autenticado. La API conserva JWT y cookies HTTP Only, sin modificar las rutas principales ni el formato de las respuestas exitosas.
 
 ## Tecnologías
 
-- Node.js (20.19.0 o posterior)
-- Express
-- MongoDB Atlas
-- Mongoose
-- bcrypt
-- JSON Web Token (`jsonwebtoken`)
-- JavaScript con módulos ES
-- dotenv
-- `node --watch` para reinicio automático durante el desarrollo (funcionalidad incorporada en Node.js).
-- `node:test` para pruebas automatizadas (módulo nativo de Node.js)
+- Node.js (20.19.0 o posterior).
+- Express.
+- MongoDB Atlas.
+- Mongoose.
+- Passport.js.
+- `passport-local` para las estrategias de registro y login.
+- `passport-jwt` para validar el usuario actual.
+- bcrypt para el hash y la comparación de contraseñas.
+- JSON Web Token (`jsonwebtoken`) para generar y verificar tokens.
+- JavaScript con módulos ES.
+- dotenv para las variables de entorno.
+- cors para la configuración de CORS.
+- cookie-parser para leer las cookies de las solicitudes.
+- `node --watch` para reinicio automático durante el desarrollo.
+- `node:test` para pruebas automatizadas (módulo nativo de Node.js).
 
 ## Instalación
+
+Clonar el repositorio e instalar las dependencias:
 
 ```bash
 git clone https://github.com/mariano925/backend2.git
@@ -25,7 +36,7 @@ npm install
 
 ## Variables de entorno y MongoDB Atlas
 
-Creá un archivo `.env` en la raíz del proyecto usando `.env.example` como referencia:
+Crear un archivo `.env` en la raíz del proyecto usando `.env.example` como referencia:
 
 ```env
 PORT=8080
@@ -35,9 +46,15 @@ JWT_SECRET=
 JWT_EXPIRES_IN=1h
 ```
 
-Configurá `MONGO_URL` con la URI de conexión proporcionada por MongoDB Atlas y la base de datos que corresponda. Si la contraseña contiene caracteres reservados para URI, deben estar codificados. No publiques ni incluyas el archivo `.env` en Git.
+Configurar `MONGO_URL` con la URI de conexión proporcionada por MongoDB Atlas y la base de datos correspondiente. Si la contraseña contiene caracteres reservados para URI, deben estar codificados.
 
-`JWT_SECRET` se utiliza para firmar y verificar los JWT; configurá un valor secreto en el entorno local y no lo compartas. `JWT_EXPIRES_IN` permite configurar la duración del token. Si no se especifica, el valor predeterminado es `1h`.
+`JWT_SECRET` se utiliza para firmar y verificar los JWT. Se debe configurar un valor secreto en el entorno local y no compartirlo.
+
+`JWT_EXPIRES_IN` permite configurar la duración del token. Si no se especifica, el valor predeterminado es `1h`.
+
+`NODE_ENV` determina el entorno de ejecución. La cookie de autenticación utiliza la opción `secure` cuando el entorno es `production`.
+
+No publicar ni incluir el archivo `.env` en Git. El repositorio contiene `.env.example` como referencia para configurar las variables necesarias.
 
 La aplicación establece la conexión a MongoDB antes de empezar a escuchar solicitudes. Si la conexión falla, el servidor no inicia.
 
@@ -61,7 +78,7 @@ Ejecutar las pruebas automatizadas:
 npm test
 ```
 
-Las pruebas inician la aplicación en puertos locales aleatorios y sustituyen la persistencia del registro; no requieren conectarse a MongoDB Atlas ni modifican datos.
+Las pruebas automatizadas levantan la aplicación en puertos locales aleatorios y simulan la persistencia mediante mocks del DAO. No requieren conectarse a MongoDB Atlas ni modifican datos de la base de datos.
 
 ## Estructura del proyecto
 
@@ -72,7 +89,8 @@ backend2/
 │   ├── server.js
 │   ├── config/
 │   │   ├── config.js
-│   │   └── database.js
+│   │   ├── database.js
+│   │   └── passport.config.js
 │   ├── controllers/
 │   │   ├── events.controller.js
 │   │   ├── health.controller.js
@@ -109,6 +127,40 @@ backend2/
 └── README.md
 ```
 
+`passport.config.js` centraliza la configuración de las estrategias de autenticación. El archivo `auth.middleware.js` corresponde al middleware de autenticación anterior; las rutas de sesiones utilizan actualmente las estrategias de Passport.
+
+## Arquitectura de la aplicación
+
+Las operaciones de eventos y usuarios utilizan una arquitectura modular:
+
+```text
+Router → Controller → Service → Repository → DAO → Modelo → MongoDB
+```
+
+Cada capa tiene una responsabilidad:
+
+- **Router:** define las rutas y conecta los middlewares con los controladores.
+- **Controller:** gestiona las solicitudes y respuestas HTTP.
+- **Service:** concentra la lógica de negocio y las validaciones.
+- **Repository:** abstrae el acceso a los datos.
+- **DAO:** realiza las operaciones de persistencia mediante los modelos de Mongoose.
+
+La autenticación incorpora Passport para centralizar la validación de usuarios y credenciales, manteniendo las responsabilidades de las demás capas.
+
+## Inicialización de Passport
+
+Las estrategias se encuentran centralizadas en:
+
+```text
+src/config/passport.config.js
+```
+
+La aplicación registra estas estrategias mediante `initializePassport()` en `app.js` y utiliza `passport.initialize()` como middleware de Express.
+
+El orden de los middlewares permite que `cookie-parser` procese las cookies antes de que Passport intente extraer el JWT.
+
+Las rutas utilizan `passport.authenticate()` con `session: false`, por lo que la autenticación se realiza mediante JWT y cookies, sin sesiones persistentes de Passport.
+
 ## Endpoints
 
 | Método | Path | Descripción |
@@ -117,9 +169,9 @@ backend2/
 | GET | `/api/events` | Obtiene todos los eventos. |
 | POST | `/api/events` | Crea un evento. |
 | GET | `/api/sessions/` | Recurso pendiente; responde `501 Not Implemented`. |
-| POST | `/api/sessions/register` | Registra un usuario con contraseña hasheada. |
-| POST | `/api/sessions/login` | Inicia sesión y establece la cookie `currentUser` con un JWT. |
-| GET | `/api/sessions/current` | Devuelve los datos del usuario autenticado; requiere la cookie `currentUser`. |
+| POST | `/api/sessions/register` | Registra un usuario mediante la estrategia Passport `register`. |
+| POST | `/api/sessions/login` | Autentica al usuario mediante `login` y establece la cookie `currentUser`. |
+| GET | `/api/sessions/current` | Devuelve los datos del usuario autenticado mediante la estrategia JWT `current`. |
 | POST | `/api/sessions/logout` | Elimina la cookie `currentUser`. |
 
 ## Estado del servidor
@@ -145,7 +197,9 @@ Router → Controller → Service → Repository → DAO → Modelo Event → Mo
 
 ### Obtener eventos
 
-`GET /api/events` no requiere request body. Responde `200 OK` con los eventos encontrados en `payload`; si no hay eventos, la lista está vacía:
+`GET /api/events` no requiere request body.
+
+Responde `200 OK` con los eventos encontrados en `payload`. Si no hay eventos, la lista está vacía:
 
 ```json
 {
@@ -156,7 +210,9 @@ Router → Controller → Service → Repository → DAO → Modelo Event → Mo
 
 ### Crear un evento
 
-`POST /api/events` recibe JSON. `title`, `date` y `location` son obligatorios; `description` es opcional. El modelo valida que `title` tenga entre 3 y 100 caracteres.
+`POST /api/events` recibe JSON.
+
+Los campos obligatorios son `title`, `date` y `location`; `description` es opcional. El modelo valida que `title` tenga entre 3 y 100 caracteres.
 
 Request:
 
@@ -191,14 +247,37 @@ Los errores de validación del modelo responden `400 Bad Request`; otros errores
 
 ## Sesiones y autenticación
 
+La autenticación de usuarios está organizada mediante tres estrategias de Passport:
+
+| Estrategia | Tipo | Responsabilidad |
+|---|---|---|
+| `register` | Local | Valida y registra un usuario. |
+| `login` | Local | Verifica las credenciales del usuario. |
+| `current` | JWT | Valida el token de la cookie y obtiene el usuario autenticado. |
+
+Las estrategias están centralizadas en `src/config/passport.config.js`. Las rutas delegan la autenticación a Passport y los controladores se encargan de construir las respuestas HTTP.
+
 ### Registrar un usuario
 
-`POST /api/sessions/register` recibe JSON. Los campos obligatorios son `first_name`, `last_name`, `email` y `password`.
+`POST /api/sessions/register` recibe JSON.
 
-- El email se normaliza con `trim` y minúsculas, y se valida su formato.
-- La contraseña debe tener al menos 8 caracteres y se almacena hasheada con bcrypt.
-- El rol enviado en el request no se toma en cuenta; el modelo asigna el rol predeterminado `user`.
-- La contraseña, tanto en texto plano como hasheada, nunca se incluye en la respuesta.
+Los campos obligatorios son `first_name`, `last_name`, `email` y `password`.
+
+La ruta utiliza la estrategia Passport `register`, que delega la lógica de negocio a `SessionsService`.
+
+El servicio realiza las siguientes operaciones:
+
+- Valida los campos obligatorios.
+- Normaliza el email mediante `trim` y minúsculas.
+- Comprueba el formato del email.
+- Verifica que la contraseña tenga al menos 8 caracteres.
+- Comprueba que el email no esté registrado.
+- Aplica bcrypt para almacenar la contraseña hasheada.
+- Persiste el usuario mediante Repository y DAO.
+
+El rol enviado en el request no se toma en cuenta. El modelo asigna el rol predeterminado `user`.
+
+El controlador devuelve los datos públicos del usuario. La contraseña, tanto en texto plano como hasheada, nunca se incluye en la respuesta.
 
 Request:
 
@@ -226,7 +305,7 @@ Respuesta `201 Created`:
 }
 ```
 
-Errores:
+Errores contemplados por el servicio:
 
 | HTTP | Situación | Mensaje |
 |---|---|---|
@@ -234,7 +313,7 @@ Errores:
 | `400 Bad Request` | El email no tiene un formato válido. | `El email no es válido` |
 | `400 Bad Request` | La contraseña tiene menos de 8 caracteres. | `La contraseña debe tener al menos 8 caracteres` |
 | `409 Conflict` | El email ya está registrado. | `El email ya está registrado` |
-| `500 Internal Server Error` | Ocurre un error no previsto. | El handler devuelve el mensaje del error o, si no existe, `Error interno del servidor.` |
+| `500 Internal Server Error` | Ocurre un error no previsto. | El handler centraliza el error. |
 
 ### Iniciar sesión
 
@@ -247,9 +326,21 @@ Errores:
 }
 ```
 
-El endpoint valida que ambos campos estén presentes, busca el usuario por email y compara la contraseña con bcrypt. Si las credenciales son correctas, genera un JWT con el payload `{ id, email, role }`, firmado con `JWT_SECRET` y con la duración configurada por `JWT_EXPIRES_IN` (predeterminada: `1h`).
+La ruta utiliza la estrategia Passport `login`, que delega la validación de las credenciales a `SessionsService`.
 
-El JWT se establece en la cookie `currentUser`; no se devuelve en el cuerpo de la respuesta. La cookie usa estas opciones:
+El servicio busca el usuario por email y compara la contraseña recibida con el hash almacenado mediante bcrypt.
+
+Si las credenciales son correctas, Passport entrega el usuario autenticado al controlador.
+
+**El controlador es el responsable de generar el JWT**, con el payload:
+
+```js
+{ id, email, role }
+```
+
+El token se firma con `JWT_SECRET` y utiliza la duración configurada por `JWT_EXPIRES_IN` (predeterminada: `1h`).
+
+El JWT no se devuelve en el cuerpo de la respuesta. Se establece en la cookie `currentUser`, con las siguientes opciones:
 
 | Opción | Valor |
 |---|---|
@@ -267,7 +358,7 @@ Respuesta `200 OK`:
 }
 ```
 
-Error `400 Bad Request` por campos faltantes:
+Respuesta `400 Bad Request` por campos faltantes:
 
 ```json
 {
@@ -276,7 +367,7 @@ Error `400 Bad Request` por campos faltantes:
 }
 ```
 
-Error `401 Unauthorized` por credenciales incorrectas:
+Respuesta `401 Unauthorized` por credenciales incorrectas:
 
 ```json
 {
@@ -285,11 +376,21 @@ Error `401 Unauthorized` por credenciales incorrectas:
 }
 ```
 
-El mensaje `Credenciales inválidas` es el mismo tanto si el usuario no existe como si la contraseña es incorrecta. Los errores no previstos se procesan con el handler general.
+El mensaje `Credenciales inválidas` es el mismo tanto si el usuario no existe como si la contraseña es incorrecta.
 
 ### Consultar el usuario actual
 
-`GET /api/sessions/current` requiere la cookie `currentUser`. Antes de permitir el acceso al controlador, `auth.middleware.js` lee la cookie y verifica el JWT, incluida su firma y vencimiento.
+`GET /api/sessions/current` requiere la cookie `currentUser`.
+
+La ruta utiliza la estrategia Passport JWT `current`, que:
+
+1. Extrae el token desde la cookie `currentUser`.
+2. Verifica su firma y vencimiento mediante `passport-jwt`.
+3. Obtiene el identificador del usuario desde el payload del JWT.
+4. Busca al usuario mediante `UsersRepository`.
+5. Si la autenticación es correcta, deja el usuario disponible en `req.user`.
+
+El controlador devuelve únicamente los datos públicos del usuario.
 
 Respuesta `200 OK`:
 
@@ -306,7 +407,7 @@ Respuesta `200 OK`:
 
 La respuesta no contiene password.
 
-Respuesta `401 Unauthorized` si falta la cookie o el token es inválido o expiró:
+Si no se proporciona un token válido, el endpoint debe responder `401 Unauthorized`:
 
 ```json
 {
@@ -317,7 +418,9 @@ Respuesta `401 Unauthorized` si falta la cookie o el token es inválido o expir�
 
 ### Cerrar sesión
 
-`POST /api/sessions/logout` elimina la cookie `currentUser`. No requiere middleware de autenticación.
+`POST /api/sessions/logout` elimina la cookie `currentUser`.
+
+Esta ruta no requiere pasar por Passport ni tener un usuario autenticado. El controlador se encarga directamente de limpiar la cookie.
 
 Respuesta `200 OK`:
 
@@ -339,4 +442,23 @@ Respuesta `200 OK`:
 }
 ```
 
-Ejecutá `npm run dev` para iniciar la aplicación y `npm test` para las pruebas automatizadas.
+## Preparación para futuras estrategias de autenticación
+
+La configuración de Passport está centralizada en `src/config/passport.config.js` para facilitar la incorporación de nuevas estrategias.
+
+La estructura permite agregar en el futuro providers externos, como Google o GitHub, sin concentrar su configuración en `app.js`.
+
+La integración de nuevos providers requerirá incorporar sus respectivas estrategias y conectarlas con las rutas y controladores correspondientes.
+
+Las estrategias externas no están implementadas en esta versión.
+
+## Seguridad y consideraciones
+
+- Las contraseñas se almacenan mediante bcrypt.
+- El JWT se firma con una variable de entorno secreta.
+- La cookie `currentUser` utiliza `httpOnly: true`.
+- Las rutas de autenticación utilizan Passport sin sesiones persistentes.
+- Las respuestas de registro y usuario actual no exponen contraseñas.
+- Los archivos `.env` y las credenciales no deben publicarse en el repositorio.
+
+Para iniciar la aplicación se utiliza `npm run dev`; para ejecutar las pruebas automatizadas, `npm test`.
