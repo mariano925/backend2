@@ -1,4 +1,3 @@
-
 import { Router } from 'express';
 import {
   getCurrentUser,
@@ -11,7 +10,7 @@ import passport from 'passport';
 
 const router = Router();
 
-// Adapta la autenticación de Passport al formato de errores de la API.
+// Adapta los resultados de Passport al formato de errores de la API.
 function authenticate(strategy, fallbackStatus) {
   return (req, res, next) => {
     passport.authenticate(
@@ -22,13 +21,24 @@ function authenticate(strategy, fallbackStatus) {
 
         if (!user) {
           const missingCredentials = info?.message === 'Missing credentials';
-          const statusCode = missingCredentials
-            ? 400
-            : info?.statusCode ?? fallbackStatus;
+
+          let statusCode = info?.statusCode ?? fallbackStatus;
+          let message = info?.message || 'No autenticado';
+
+          if (strategy === 'current') {
+            statusCode = 401;
+            message = 'No autenticado';
+          } else if (missingCredentials && strategy === 'register') {
+            statusCode = 400;
+            message = 'Faltan campos obligatorios';
+          } else if (missingCredentials && strategy === 'login') {
+            statusCode = 400;
+            message = 'Email y contraseña son obligatorios';
+          }
 
           return res.status(statusCode).json({
             status: 'error',
-            message: info?.message || 'No autenticado',
+            message,
           });
         }
 
@@ -39,7 +49,7 @@ function authenticate(strategy, fallbackStatus) {
   };
 }
 
-// Conecta los endpoints de sesiones con sus controladores; app.js monta este router en /api/sessions.
+// Conecta los endpoints de sesiones con sus controladores.
 router.get('/', getSessions);
 router.get('/current', authenticate('current', 401), getCurrentUser);
 router.post('/register', authenticate('register', 400), registerUser);
